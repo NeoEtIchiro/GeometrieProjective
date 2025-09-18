@@ -16,8 +16,8 @@ import matplotlib.animation as animation
 from code_qu8 import Rotation2
 
 # Triangle initial
-xtriangle = np.array([0, -1.5, 2])
-ytriangle = np.array([2, 1.5, 0.5])
+xtriangle = np.array([1, -1.2, 2])
+ytriangle = np.array([2, 1.3, 0.5])
 
 # Animation parameters
 N = 90
@@ -47,4 +47,4 @@ ani = animation.FuncAnimation(fig, animate, frames=N+1, interval=50, blit=True)
 plt.show()
 
 # Pour sauvegarder en GIF
-ani.save("RotationTriangle1.gif", writer='pillow')
+ani.save("RotationTriangle2.gif", writer='pillow')
