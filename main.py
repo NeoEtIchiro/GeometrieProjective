@@ -2,12 +2,12 @@ import pygame
 import numpy as np
 from math import pi
 
-from matrices import *
-from camera import Camera
+from render3D.matrices import *
+from render3D.camera import Camera
 
-from shapes import Cube
+from render3D.shapes import Cube
 
-from utils import draw_scene
+from render3D.utils import draw_scene
 
 pygame.init()
 screen = pygame.display.set_mode((600, 600))

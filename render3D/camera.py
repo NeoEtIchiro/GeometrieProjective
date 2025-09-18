@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-from matrices import ROTATION_Y, ROTATION_X
+from render3D.matrices import ROTATION_Y, ROTATION_X
 
 class Camera:
     def __init__(self, position=[0.0, 0.0, 0.0], speed=3.0):

@@ -1,17 +1,22 @@
 import numpy as np
-from matrices import ROTATION_Y, ROTATION_X
+from render3D.matrices import ROTATION_Y, ROTATION_X
 
 def to_screen(points, center=(300, 300), scale=100):
     # Convertit les points mathématiques en pixels pour Pygame
     return [(int(center[0] + scale*x), int(center[1] - scale*y)) for x, y in points]
 
 def project_perspective(points3d, d=10):
-    # Projection perspective standard: plan à z=d, caméra à l'origine, regard +Z
+    # Projection perspective simple
     projected = []
+    
+    # On projette chaque point
     for x, y, z in points3d:
-        # z <= 0: derrière/au plan de la caméra -> on évite
+        # On évite la division par zéro
         factor = d / z
+        
+        # On projette
         projected.append([x * factor, y * factor])
+    
     return np.array(projected)
 
 def draw_scene(surface, shapes, camera_pos=np.array([0.0, 0.0, 0.0]), camera_angles=(0.0, 0.0), d=10):
@@ -22,7 +27,7 @@ def draw_scene(surface, shapes, camera_pos=np.array([0.0, 0.0, 0.0]), camera_ang
     """
     yaw, pitch = camera_angles
     R_cam = ROTATION_Y(yaw) @ ROTATION_X(pitch)
-    R_view = R_cam.T  # inverse d'une rotation orthonormée
+    R_view = R_cam.T
 
     faces_depth = []
     for shape in shapes:
@@ -36,7 +41,7 @@ def draw_scene(surface, shapes, camera_pos=np.array([0.0, 0.0, 0.0]), camera_ang
             depth = center_cam[2]
             faces_depth.append((depth, face))
 
-    # dessiner du plus loin au plus proche
+    # Dessiner du plus loin au plus proche
     faces_depth.sort(key=lambda x: x[0], reverse=True)
     for _, face in faces_depth:
         face.draw(surface, R_view=R_view, camera_pos=camera_pos, d=d)

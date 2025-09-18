@@ -1,4 +1,4 @@
-from face import Face
+from render3D.face import Face
 import numpy as np
 
 class Shape:
