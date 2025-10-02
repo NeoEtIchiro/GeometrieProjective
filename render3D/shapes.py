@@ -1,6 +1,8 @@
 from render3D.face import Face
 import numpy as np
 
+from render3D.consts import *
+
 class Shape:
     def __init__(self, faces, position=[0,0,0], angles=[0,0,0]):
         self.faces = faces
@@ -9,7 +11,7 @@ class Shape:
         self.scale = 1
             
 class Cube(Shape):
-    def __init__(self, scale=1, color=(200, 200, 200), position=[0,0,0], angles=[0,0,0]):
+    def __init__(self, scale=1, position=[0,0,0], angles=[0,0,0]):
         half = scale / 2
         faces = [
             # Front face
@@ -18,7 +20,7 @@ class Cube(Shape):
                 [half, -half, half],
                 [-half, -half, half],
                 [-half,  half, half]
-            ], color=(255, 0, 0), angles=[0, 0, 0], position=[0, 0, 0]),
+            ], color=RED, angles=[0, 0, 0], position=[0, 0, 0]),
 
             # Back face
             Face([
@@ -26,7 +28,7 @@ class Cube(Shape):
                 [-half, half, -half],
                 [-half, -half, -half],
                 [half, -half, -half]
-            ], color=(0, 255, 0), angles=[0, 0, 0], position=[0, 0, 0]),
+            ], color=ORANGE, angles=[0, 0, 0], position=[0, 0, 0]),
 
             # Right face
             Face([
@@ -34,7 +36,7 @@ class Cube(Shape):
                 [half, half, -half],
                 [half, -half,  -half],
                 [half,  -half,  half]
-            ], color=(75, 75, 75), angles=[0, 0, 0], position=[0, 0, 0]),
+            ], color=WHITE, angles=[0, 0, 0], position=[0, 0, 0]),
 
             # Left face
             Face([
@@ -42,7 +44,7 @@ class Cube(Shape):
                 [-half, half, half],
                 [-half, -half, half],
                 [-half, -half, -half]
-            ], color=(0, 100, 100), angles=[0, 0, 0], position=[0, 0, 0]),
+            ], color=YELLOW, angles=[0, 0, 0], position=[0, 0, 0]),
 
             # Top face
             Face([
@@ -50,7 +52,7 @@ class Cube(Shape):
                 [half, half, -half],
                 [half, half, half],
                 [-half, half, half]
-            ], color=(0, 0, 255), angles=[0, 0, 0], position=[0, 0, 0]),
+            ], color=GREEN, angles=[0, 0, 0], position=[0, 0, 0]),
 
             # Bottom face
             Face([
@@ -58,6 +60,6 @@ class Cube(Shape):
                 [half, -half, -half],
                 [-half, -half, -half],
                 [-half, -half, half]
-            ], color=(255, 255, 0), angles=[0, 0, 0], position=[0, 0, 0])
+            ], color=BLUE, angles=[0, 0, 0], position=[0, 0, 0])
         ]
         super().__init__(faces=faces, position=position, angles=angles)

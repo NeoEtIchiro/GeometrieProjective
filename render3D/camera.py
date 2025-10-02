@@ -6,38 +6,41 @@ class Camera:
     def __init__(self, position=[0.0, 0.0, 0.0], speed=3.0):
         self.position = np.array(position, dtype=float)
         self.speed = float(speed)
-        # si besoin, ajouter yaw/pitch pour rotation plus tard
+
         self.yaw = 0.0
         self.pitch = 0.0
+        self.rot_speed = 1.5  # rad/s
 
     def update(self, keys, dt):
-        rot_speed = -1.5  # rad/s
+        # Input de rotation
         if keys[pygame.K_LEFT]:
-            self.yaw += rot_speed * dt
+            self.yaw -= self.rot_speed * dt
         if keys[pygame.K_RIGHT]:
-            self.yaw -= rot_speed * dt
+            self.yaw += self.rot_speed * dt
         if keys[pygame.K_UP]:
-            self.pitch += rot_speed * dt
+            self.pitch -= self.rot_speed * dt
         if keys[pygame.K_DOWN]:
-            self.pitch -= rot_speed * dt
+            self.pitch += self.rot_speed * dt
 
         self.pitch = np.clip(self.pitch, -np.pi/2 + 1e-3, np.pi/2 - 1e-3)
 
-        R_cam = ROTATION_Y(self.yaw) @ ROTATION_X(self.pitch)
-        forward = R_cam @ np.array([0.0, 0.0, 1.0])
-        right   = R_cam @ np.array([1.0, 0.0, 0.0])
-        up_world = np.array([0.0, 1.0, 0.0])  # axe Y global
+        R_cam = ROTATION_Y(self.yaw) @ ROTATION_X(self.pitch) # Appliquer pitch puis yaw (les rotations)
 
+        # Input de déplacement
+        forward = R_cam @ np.array([0.0, 0.0, 1.0]) # axe Z caméra
+        right   = R_cam @ np.array([1.0, 0.0, 0.0]) # axe X caméra
+        up_world = np.array([0.0, 1.0, 0.0])  # axe Y global
+        
         move = self.speed * dt
-        if keys[pygame.K_z]:
+        if keys[pygame.K_y]:
             self.position += forward * move
-        if keys[pygame.K_s]:
+        if keys[pygame.K_h]:
             self.position -= forward * move
-        if keys[pygame.K_q]:
+        if keys[pygame.K_g]:
             self.position -= right * move
-        if keys[pygame.K_d]:
+        if keys[pygame.K_j]:
             self.position += right * move
         if keys[pygame.K_SPACE]:
-            self.position += up_world * move     # monter dans le monde
+            self.position += up_world * move
         if keys[pygame.K_LCTRL]:
-            self.position -= up_world * move     # descendre dans le monde
+            self.position -= up_world * move

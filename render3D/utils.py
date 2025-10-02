@@ -20,17 +20,12 @@ def project_perspective(points3d, d=10):
     return np.array(projected)
 
 def draw_scene(surface, shapes, camera_pos=np.array([0.0, 0.0, 0.0]), camera_angles=(0.0, 0.0), d=10):
-    """
-    Painter's algorithm:
-    - world -> camera space
-    - tri du plus loin (grand z) au plus proche (petit z)
-    """
     yaw, pitch = camera_angles
     R_cam = ROTATION_Y(yaw) @ ROTATION_X(pitch)
     R_view = R_cam.T
 
     faces_depth = []
-    for shape in shapes:
+    for idx, shape in enumerate(shapes):  # Ajout de l'index
         for face in shape.faces:
             face.scale = shape.scale
             face.angles = shape.angles
@@ -39,9 +34,8 @@ def draw_scene(surface, shapes, camera_pos=np.array([0.0, 0.0, 0.0]), camera_ang
 
             center_cam = (R_view @ (pts3d_world.mean(axis=0) - camera_pos))
             depth = center_cam[2]
-            faces_depth.append((depth, face))
+            faces_depth.append((depth, face, idx))  # Ajout de l'index
 
-    # Dessiner du plus loin au plus proche
     faces_depth.sort(key=lambda x: x[0], reverse=True)
-    for _, face in faces_depth:
-        face.draw(surface, R_view=R_view, camera_pos=camera_pos, d=d)
+    for _, face, idx in faces_depth:
+        face.draw(surface, R_view=R_view, camera_pos=camera_pos, d=d, cubie_index=None)  # Ajout index
