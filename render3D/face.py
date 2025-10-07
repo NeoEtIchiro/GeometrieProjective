@@ -11,6 +11,7 @@ class Face:
         self.scale = 1
         self.position = np.array(position, dtype=float)
 
+
     # Applique la transformation (rotation, homothétie, translation) aux points de la face
     def apply_transform(self):
         M = HOMOTHETIE(self.scale) @ ROTATION_Y(self.angles[1]) @ ROTATION_X(self.angles[0]) @ ROTATION_Z(self.angles[2])
@@ -52,6 +53,10 @@ class Face:
         # Projection perspective et dessin
         pts2d = project_perspective(pts3d, d=d)
         pygame.draw.polygon(surface, self.color, to_screen(pts2d))
+
+
+
+
 
         # --- Ajout affichage index ---
         if cubie_index is not None:

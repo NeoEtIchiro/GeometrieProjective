@@ -51,7 +51,7 @@ def build_cubie(cubie_x, cubie_y, cubie_z, spacing):
     return cubie
 
 class Rubik:
-    def __init__(self, gap=0.06, turn_speed=6.0):
+    def __init__(self, gap=1.2, turn_speed=2.0):
         self.gap = gap
 
         # espacement entre centres des cubies
@@ -233,7 +233,7 @@ class Rubik:
 
 
 # ---------- App setup ----------
-rubik = Rubik(gap=0.06, turn_speed=12.0)
+rubik = Rubik(gap=0.16, turn_speed=2.0)
 camera = Camera(position=[0.0, 0.0, -15.0], speed=3.0)
 
 def handle_move_key(event):

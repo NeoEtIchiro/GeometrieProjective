@@ -14,7 +14,7 @@ class Cube(Shape):
     def __init__(self, scale=1, position=[0,0,0], angles=[0,0,0]):
         half = scale / 2
         faces = [
-            # Front face
+            # Front face,0,0
             Face([
                 [half, half, half],
                 [half, -half, half],
