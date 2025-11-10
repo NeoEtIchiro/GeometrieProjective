@@ -1,3 +1,4 @@
+import random
 import pygame # type: ignore
 import numpy as np # type: ignore
 from math import pi
@@ -38,6 +39,9 @@ def build_cubie(cubie_x, cubie_y, cubie_z, spacing):
 
 class Rubik:
     def __init__(self, gap=1.2, turn_speed=2.0):
+        # ...existing code...
+        self.input_buffer = []  # Buffer pour les inputs de rotation
+    def __init__(self, gap=1.2, turn_speed=2.0):
         self.gap = gap
         self.spacing = 1 + gap
         self.turn_speed = float(turn_speed)
@@ -49,6 +53,7 @@ class Rubik:
                     self.cubies.append(build_cubie(ix, iy, iz, self.spacing))
         
         self.moveState = None
+        self.input_buffer = []
 
     def grid_to_world(self, grid):
         return np.array([grid[0]*self.spacing, grid[1]*self.spacing, grid[2]*self.spacing], dtype=float)
@@ -66,13 +71,13 @@ class Rubik:
 
     def start_move(self, axis, layer, dir_sign):
         if self.moveState is not None:
+            # Ajoute à l'input buffer si une rotation est en cours
+            self.input_buffer.append((axis, layer, dir_sign))
             return False
-        
-        idx = {'x':0,'y':1,'z':2}[axis] 
+        idx = {'x':0,'y':1,'z':2}[axis]
         affected = [cubie for cubie in self.cubies if cubie.grid[idx] == layer]
         if not affected:
             return False
-        
         self.moveState = {
             'axis': axis,
             'idx': idx,
@@ -147,28 +152,58 @@ class Rubik:
                 cubie.rotation_matrix = best_M
 
             self.moveState = None
+            # Dès qu'une rotation est terminée, traite le prochain input du buffer
+            if self.input_buffer:
+                axis, layer, dir_sign = self.input_buffer.pop(0)
+                self.start_move(axis, layer, dir_sign)
 
 
 
 
 # ---------- App setup ----------
-rubik = Rubik(gap=0.16, turn_speed=10.0)
+base_turn_speed = 5
+
+rubik = Rubik(gap=0.05, turn_speed=base_turn_speed)
 camera = Camera(position=[0.0, 0.0, -15.0], speed=3.0)
 
 def handle_move_key(event):
+    key = event.key
+    if key == pygame.K_m:
+        rubik.turn_speed = 15.0 
+        moves = []
+        axes = ['x', 'y', 'z']
+        layers = [-1, 1]
+        dirs = [-1, 1]
+        for _ in range(30):
+            axis = random.choice(axes)
+            layer = random.choice(layers)
+            dir_sign = random.choice(dirs)
+            moves.append((axis, layer, dir_sign))
+        rubik.input_buffer.extend(moves)
+        if rubik.moveState is None and rubik.input_buffer:
+            axis, layer, dir_sign = rubik.input_buffer.pop(0)
+            rubik.start_move(axis, layer, dir_sign)
+        return
+    
     inv = -1 if (event.mod & pygame.KMOD_SHIFT) else +1
     key = event.key
     if key == pygame.K_u:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('y', +1, +inv)
     elif key == pygame.K_d:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('y', -1, -inv)
     elif key == pygame.K_l:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('x', -1, +inv)
     elif key == pygame.K_r:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('x', +1, -inv)
     elif key == pygame.K_f:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('z', +1, +inv)
     elif key == pygame.K_b:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('z', -1, -inv)
 
 running = True
