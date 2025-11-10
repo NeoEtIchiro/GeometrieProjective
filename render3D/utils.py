@@ -19,23 +19,26 @@ def project_perspective(points3d, d=10):
     
     return np.array(projected)
 
-def draw_scene(surface, shapes, camera_pos=np.array([0.0, 0.0, 0.0]), camera_angles=(0.0, 0.0), d=10):
+def draw_scene(surface, objects, camera_pos, camera_angles, d=10):
     yaw, pitch = camera_angles
     R_cam = ROTATION_Y(yaw) @ ROTATION_X(pitch)
     R_view = R_cam.T
 
-    faces_depth = []
-    for idx, shape in enumerate(shapes):  # Ajout de l'index
-        for face in shape.faces:
-            face.scale = shape.scale
-            face.angles = shape.angles
-            face.position = shape.position
-            pts3d_world = face.apply_transform()
+    faces_to_draw = []
+    for obj in objects:
+        M = obj.get_transform_matrix()
+        for face in obj.faces:
+            # Transformation globale
+            pts3d_world = face.get_transformed_points(M, obj.position)
+            # Passage en coordonnées caméra
+            pts3d_cam = (R_view @ (pts3d_world - camera_pos).T).T
+            # Calcul profondeur moyenne (z caméra)
+            z_mean = np.mean(pts3d_cam[:, 2])
+            faces_to_draw.append((z_mean, face, pts3d_cam, obj, M, obj.position))
 
-            center_cam = (R_view @ (pts3d_world.mean(axis=0) - camera_pos))
-            depth = center_cam[2]
-            faces_depth.append((depth, face, idx))  # Ajout de l'index
+    # Trier du plus loin au plus proche
+    faces_to_draw.sort(key=lambda tup: tup[0], reverse=True)
 
-    faces_depth.sort(key=lambda x: x[0], reverse=True)
-    for _, face, idx in faces_depth:
-        face.draw(surface, R_view=R_view, camera_pos=camera_pos, d=d, cubie_index=None)  # Ajout index
+    for _, face, pts3d_cam, obj, M, position in faces_to_draw:
+        # On ne redonne pas pts3d_cam à face.draw, car elle refait le calcul
+        face.draw(surface, R_view, camera_pos, d, M, position)
