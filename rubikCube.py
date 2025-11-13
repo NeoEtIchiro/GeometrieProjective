@@ -1,9 +1,8 @@
+import random
 import pygame # type: ignore
 import numpy as np # type: ignore
 from math import pi
-import copy
 
-from render3D import face
 from render3D.matrices import *
 from render3D.camera import Camera
 from render3D.shapes import Cube
@@ -18,63 +17,48 @@ startTime = pygame.time.get_ticks()
 
 def build_cubie(cubie_x, cubie_y, cubie_z, spacing):
     pos = np.array([cubie_x * spacing, cubie_y * spacing, cubie_z * spacing], dtype=float)
-    cubie = Cube(scale=1, position=pos.tolist(), angles=[0,0,0])
-    
-    orig_faces = getattr(cubie, "faces", [])
-    new_faces = []
-    # Convention: faces = [x+, x-, y+, y-, z+, z-]
-    for i, face in enumerate(orig_faces):
-        new_face = copy.deepcopy(face)
-        new_face.scale = cubie.scale
-        new_face.angles = cubie.angles
-        new_face.position = cubie.position
+    cubie = Cube(scale=1, position=pos.tolist(), rotation_matrix=np.eye(3))
 
-        # Coloration selon la position du cubie
-        if i == 0 and cubie_z == 1:      # x+
-            pass  # garder la couleur
-        elif i == 1 and cubie_z == -1:   # x-
-            pass
-        elif i == 2 and cubie_x == 1:    # y+
-            pass
-        elif i == 3 and cubie_x == -1:   # y-
-            pass
-        elif i == 4 and cubie_y == 1:    # z+
-            pass
-        elif i == 5 and cubie_y == -1:   # z-
-            pass
-        else:
-            new_face.color = BLACK  # face intérieure
+    # Ordre des faces dans Cube:
+    # 0: z+, 1: z-, 2: x+, 3: x-, 4: y+, 5: y-
+    gx, gy, gz = cubie_x, cubie_y, cubie_z
+    for i, f in enumerate(cubie.faces):
+        keep = (
+            (i == 0 and gz == +1) or
+            (i == 1 and gz == -1) or
+            (i == 2 and gx == +1) or
+            (i == 3 and gx == -1) or
+            (i == 4 and gy == +1) or
+            (i == 5 and gy == -1)
+        )
+        if not keep:
+            f.color = BLACK  # face intérieure non visible
 
-        new_faces.append(new_face)
-    cubie.faces = new_faces
     cubie.grid = np.array([cubie_x, cubie_y, cubie_z], dtype=int)
     return cubie
 
 class Rubik:
     def __init__(self, gap=1.2, turn_speed=2.0):
+        # ...existing code...
+        self.input_buffer = []  # Buffer pour les inputs de rotation
+    def __init__(self, gap=1.2, turn_speed=2.0):
         self.gap = gap
-
-        # espacement entre centres des cubies
         self.spacing = 1 + gap
-
         self.turn_speed = float(turn_speed)
-
         self.cubies = []
 
-        # construire les 27 cubies, passe à travers -1,0,1 en x,y,z
         for ix in (-1, 0, 1):
             for iy in (-1, 0, 1):
                 for iz in (-1, 0, 1):
                     self.cubies.append(build_cubie(ix, iy, iz, self.spacing))
         
         self.moveState = None
+        self.input_buffer = []
 
     def grid_to_world(self, grid):
-        # Retourne la position 3D (float) du centre du cubie à partir de ses indices grille (int)
         return np.array([grid[0]*self.spacing, grid[1]*self.spacing, grid[2]*self.spacing], dtype=float)
 
     def rotate_vec(self, v, axis, angle):
-        # Rotate un vecteur en fonction de l'axe et de l'angle
         if axis == 'x':
             R = ROTATION_X(angle)
         elif axis == 'y':
@@ -83,42 +67,17 @@ class Rubik:
             R = ROTATION_Z(angle)
         return R @ v
 
-    def rotate_vec_local(self, v, axis, angle, cubie_angles):
-        # Applique la rotation autour de l'axe donné, dans le repère local du cubie
-        # 1. Transforme le vecteur dans le repère local
-        # 2. Applique la rotation
-        # 3. Re-transforme dans le repère global
 
-        # Matrice de rotation locale (cubie avant rotation)
-        M_local = ROTATION_Y(cubie_angles[1]) @ ROTATION_X(cubie_angles[0]) @ ROTATION_Z(cubie_angles[2])
-        # Inverse pour repasser dans le repère du cubie
-        M_local_inv = np.linalg.inv(M_local)
-
-        # Passe v dans le repère local
-        v_local = M_local_inv @ v
-
-        # Applique la rotation autour de l'axe local
-        if axis == 'x':
-            R = ROTATION_X(angle)
-        elif axis == 'y':
-            R = ROTATION_Y(angle)
-        else:
-            R = ROTATION_Z(angle)
-        v_local_rot = R @ v_local
-
-        # Repasse dans le repère global
-        v_global = M_local @ v_local_rot
-        return v_global
 
     def start_move(self, axis, layer, dir_sign):
         if self.moveState is not None:
+            # Ajoute à l'input buffer si une rotation est en cours
+            self.input_buffer.append((axis, layer, dir_sign))
             return False
-        
-        idx = {'x':0,'y':1,'z':2}[axis] 
+        idx = {'x':0,'y':1,'z':2}[axis]
         affected = [cubie for cubie in self.cubies if cubie.grid[idx] == layer]
         if not affected:
             return False
-        
         self.moveState = {
             'axis': axis,
             'idx': idx,
@@ -135,122 +94,116 @@ class Rubik:
             return
         
         moveState = self.moveState
-        
-        # On ajoute à la progression de la rotation
         moveState['progression'] += self.turn_speed * dt
-
-        # Clamp à 90° pour ne pas trop tourner
         if moveState['progression'] > (pi/2):
             moveState['progression'] = pi/2
         
-        # Incrément d'angle depuis la dernière frame
         delta = moveState['progression'] - moveState['lastProgression']
-
         moveState['lastProgression'] = moveState['progression']
-
-        # Angle à appliquer (positif ou négatif selon le sens)
         angle = delta * moveState['rotationDir']
 
-        # Appliquer incrément d'angle aux cubies affectés
+        # Appliquer rotation incrémentale globale (position + orientation)
         for cubie in moveState['affected']:
-            v = self.rotate_vec(cubie.position, moveState['axis'], angle)
-            cubie.position = v.astype(float)
-
-            # Tourner l'orientation autour de l'axe monde: ajouter sur l'axe correspondant
+            cubie.position = self.rotate_vec(cubie.position, moveState['axis'], angle).astype(float)
+            # Orientation: composition par rotation GLOBALE (matrice)
             if moveState['axis'] == 'x':
-                cubie.angles[0] += angle
+                R_global = ROTATION_X(angle)
             elif moveState['axis'] == 'y':
-                cubie.angles[1] += angle
+                R_global = ROTATION_Y(angle)
             else:
-                cubie.angles[2] += angle
+                R_global = ROTATION_Z(angle)
+            cubie.rotation_matrix = R_global @ cubie.rotation_matrix
 
-        # Fin de rotation: snap grille et angles
+        # Fin de rotation: snapping
         if moveState['progression'] >= (pi/2 - 1e-6):
             for cubie in moveState['affected']:
-                # Snap angles sur l'axe tourné
-                ax = moveState['axis']
-                if ax == 'x':
-                    cubie.angles[0] = round(cubie.angles[0] / (pi/2)) * (pi/2)
-                elif ax == 'y':
-                    cubie.angles[1] = round(cubie.angles[1] / (pi/2)) * (pi/2)
-                else:
-                    cubie.angles[2] = round(cubie.angles[2] / (pi/2)) * (pi/2)
-
-                
-                # Maj indices grille
                 grid_x, grid_y, grid_z = cubie.grid.tolist()
                 if moveState['axis'] == 'y':
-                    # rotation dans le plan (x,z)
-                    if moveState['rotationDir'] > 0:  # cw en regardant depuis +Y vers l'origine
+                    if moveState['rotationDir'] > 0:
                         grid_x, grid_z = grid_z, -grid_x
-                    else:             # ccw
+                    else:
                         grid_x, grid_z = -grid_z, grid_x
                 elif moveState['axis'] == 'x':
-                    # rotation dans le plan (y,z)
                     if moveState['rotationDir'] > 0:
                         grid_y, grid_z = -grid_z, grid_y
                     else:
                         grid_y, grid_z = grid_z, -grid_y
                 else:  # 'z'
-                    # rotation dans le plan (x,y)
                     if moveState['rotationDir'] > 0:
                         grid_x, grid_y = -grid_y, grid_x
                     else:
                         grid_x, grid_y = grid_y, -grid_x
 
-
                 cubie.grid = np.array([grid_x, grid_y, grid_z], dtype=int)
-                # recalc position exacte depuis la grille (évite la dérive float)
                 cubie.position = self.grid_to_world(cubie.grid)
 
-            self.moveState = None  # mouvement terminé
+                # Snap robuste : trouve la matrice de rotation la plus proche parmi toutes les combinaisons de quarts de tour
+                M = cubie.rotation_matrix
+                best_M = None
+                best_dist = float('inf')
+                for x in [0, 0.5*pi, pi, 1.5*pi]:
+                    for y in [0, 0.5*pi, pi, 1.5*pi]:
+                        for z in [0, 0.5*pi, pi, 1.5*pi]:
+                            M_candidate = ROTATION_Y(y) @ ROTATION_X(x) @ ROTATION_Z(z)
+                            dist = np.linalg.norm(M - M_candidate)
+                            if dist < best_dist:
+                                best_dist = dist
+                                best_M = M_candidate
+                cubie.rotation_matrix = best_M
 
-    def apply_global_rotation_to_local_angles(cubie, axis, angle):
-        # 1. Matrice de rotation locale actuelle
-        M_local = ROTATION_Y(cubie.angles[1]) @ ROTATION_X(cubie.angles[0]) @ ROTATION_Z(cubie.angles[2])
-        # 2. Matrice de rotation globale à appliquer
-        if axis == 'x':
-            R_global = ROTATION_X(angle)
-        elif axis == 'y':
-            R_global = ROTATION_Y(angle)
-        else:
-            R_global = ROTATION_Z(angle)
-        # 3. Nouvelle orientation
-        M_new = R_global @ M_local
-        # 4. Extraire les angles d'Euler (sans scipy, version simple pour petits angles)
-        # Attention : cette extraction est simplifiée et peut ne pas couvrir tous les cas
-        sy = np.sqrt(M_new[0,0]**2 + M_new[1,0]**2)
-        singular = sy < 1e-6
-        if not singular:
-            x = np.arctan2(M_new[2,1], M_new[2,2])
-            y = np.arctan2(-M_new[2,0], sy)
-            z = np.arctan2(M_new[1,0], M_new[0,0])
-        else:
-            x = np.arctan2(-M_new[1,2], M_new[1,1])
-            y = np.arctan2(-M_new[2,0], sy)
-            z = 0
-        cubie.angles = [x, y, z]
+            self.moveState = None
+            # Dès qu'une rotation est terminée, traite le prochain input du buffer
+            if self.input_buffer:
+                axis, layer, dir_sign = self.input_buffer.pop(0)
+                self.start_move(axis, layer, dir_sign)
+
+
 
 
 # ---------- App setup ----------
-rubik = Rubik(gap=0.16, turn_speed=2.0)
+base_turn_speed = 5
+
+rubik = Rubik(gap=0.05, turn_speed=base_turn_speed)
 camera = Camera(position=[0.0, 0.0, -15.0], speed=3.0)
 
 def handle_move_key(event):
-    # Shift inverse le sens
+    key = event.key
+    if key == pygame.K_m:
+        rubik.turn_speed = 15.0 
+        moves = []
+        axes = ['x', 'y', 'z']
+        layers = [-1, 1]
+        dirs = [-1, 1]
+        for _ in range(30):
+            axis = random.choice(axes)
+            layer = random.choice(layers)
+            dir_sign = random.choice(dirs)
+            moves.append((axis, layer, dir_sign))
+        rubik.input_buffer.extend(moves)
+        if rubik.moveState is None and rubik.input_buffer:
+            axis, layer, dir_sign = rubik.input_buffer.pop(0)
+            rubik.start_move(axis, layer, dir_sign)
+        return
+    
     inv = -1 if (event.mod & pygame.KMOD_SHIFT) else +1
     key = event.key
-    if key == pygame.K_u:   # Up (y = +1)
+    if key == pygame.K_u:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('y', +1, +inv)
-    elif key == pygame.K_d: # Down (y = -1)
-        rubik.start_move('y', -1, -inv)  # sens inversé pour cohérence visuelle
-    elif key == pygame.K_l: # Left (x = -1)
+    elif key == pygame.K_d:
+        rubik.turn_speed = base_turn_speed
+        rubik.start_move('y', -1, -inv)
+    elif key == pygame.K_l:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('x', -1, +inv)
-    elif key == pygame.K_r: # Right (x = +1)
+    elif key == pygame.K_r:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('x', +1, -inv)
-    elif key == pygame.K_f: # Front (z = +1)
+    elif key == pygame.K_f:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('z', +1, +inv)
-    elif key == pygame.K_b: # Back (z = -1)
+    elif key == pygame.K_b:
+        rubik.turn_speed = base_turn_speed
         rubik.start_move('z', -1, -inv)
 
 running = True
@@ -262,18 +215,11 @@ while running:
             handle_move_key(event)
 
     dt = clock.get_time() / 1000.0
-
-    # inputs caméra
     keys = pygame.key.get_pressed()
     camera.update(keys, dt)
-
-    # update rubik
     rubik.update(dt)
 
-    # Clear screen
     screen.fill((50, 50, 50))
-
-    # draw
     draw_scene(screen, rubik.cubies,
                camera_pos=camera.position,
                camera_angles=(camera.yaw, camera.pitch),

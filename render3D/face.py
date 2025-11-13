@@ -1,27 +1,18 @@
-from render3D.matrices import *
 import pygame
 import numpy as np
 from render3D.utils import to_screen, project_perspective
 
 class Face:
-    def __init__(self, points, color=(200, 200, 200), position=[0,0,0], angles=[0, 0, 0]):
+    def __init__(self, points, color=(200, 200, 200)):
         self.points = np.array(points, dtype=float)
         self.color = color
-        self.angles = list(map(float, angles))
-        self.scale = 1
-        self.position = np.array(position, dtype=float)
 
-
-    # Applique la transformation (rotation, homothétie, translation) aux points de la face
-    def apply_transform(self):
-        M = HOMOTHETIE(self.scale) @ ROTATION_Y(self.angles[1]) @ ROTATION_X(self.angles[0]) @ ROTATION_Z(self.angles[2])
-        pts = M @ self.points.T
-        pts = pts.T + self.position
+    def get_transformed_points(self, M, position):
+        pts = (M @ self.points.T).T + position
         return pts
 
-    def draw(self, surface, R_view, camera_pos=np.array([0.0, 0.0, 0.0]), d=10, cubie_index=None):
-        # Transformation des points de la face
-        pts3d_world = self.apply_transform()
+    def draw(self, surface, R_view, camera_pos, d, M, position, cubie_index=None):
+        pts3d_world = self.get_transformed_points(M, position)
         if pts3d_world.shape[0] < 3:
             return
 

@@ -2,64 +2,65 @@ from render3D.face import Face
 import numpy as np
 
 from render3D.consts import *
+from render3D.matrices import *
 
 class Shape:
-    def __init__(self, faces, position=[0,0,0], angles=[0,0,0]):
+    def __init__(self, faces, position=[0,0,0], rotation_matrix=None, scale=1):
         self.faces = faces
-        self.position = np.array(position, dtype=float)  # <--- use float dtype
-        self.angles = list(map(float, angles))
-        self.scale = 1
+        self.position = np.array(position, dtype=float)
+        if rotation_matrix is None:
+            self.rotation_matrix = np.eye(3)
+        else:
+            self.rotation_matrix = np.array(rotation_matrix, dtype=float)
+        self.scale = scale
             
+    def get_transform_matrix(self):
+            return HOMOTHETIE(self.scale) @ self.rotation_matrix
+
+    def draw(self, surface, R_view, camera_pos, d=10):
+        M = self.get_transform_matrix()
+        for face in self.faces:
+            face.draw(surface, R_view, camera_pos, d, M, self.position)
+
 class Cube(Shape):
-    def __init__(self, scale=1, position=[0,0,0], angles=[0,0,0]):
+    def __init__(self, scale=1, position=[0,0,0], rotation_matrix=None):
         half = scale / 2
         faces = [
-            # Front face,0,0
             Face([
                 [half, half, half],
                 [half, -half, half],
                 [-half, -half, half],
                 [-half,  half, half]
-            ], color=RED, angles=[0, 0, 0], position=[0, 0, 0]),
-
-            # Back face
+            ], color=RED),
             Face([
                 [half, half, -half],
                 [-half, half, -half],
                 [-half, -half, -half],
                 [half, -half, -half]
-            ], color=ORANGE, angles=[0, 0, 0], position=[0, 0, 0]),
-
-            # Right face
+            ], color=ORANGE),
             Face([
                 [half, half, half],
                 [half, half, -half],
                 [half, -half,  -half],
                 [half,  -half,  half]
-            ], color=WHITE, angles=[0, 0, 0], position=[0, 0, 0]),
-
-            # Left face
+            ], color=WHITE),
             Face([
                 [-half, half, -half],
                 [-half, half, half],
                 [-half, -half, half],
                 [-half, -half, -half]
-            ], color=YELLOW, angles=[0, 0, 0], position=[0, 0, 0]),
-
-            # Top face
+            ], color=YELLOW),
             Face([
                 [-half, half, -half],
                 [half, half, -half],
                 [half, half, half],
                 [-half, half, half]
-            ], color=GREEN, angles=[0, 0, 0], position=[0, 0, 0]),
-
-            # Bottom face
+            ], color=GREEN),
             Face([
                 [half, -half, half],
                 [half, -half, -half],
                 [-half, -half, -half],
                 [-half, -half, half]
-            ], color=BLUE, angles=[0, 0, 0], position=[0, 0, 0])
+            ], color=BLUE)
         ]
-        super().__init__(faces=faces, position=position, angles=angles)
+        super().__init__(faces=faces, position=position, rotation_matrix=rotation_matrix, scale=scale)
