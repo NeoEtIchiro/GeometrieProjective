@@ -1,7 +1,7 @@
 ## 1 — Vue d’ensemble du projet
 
 - Application Python utilisant Pygame pour afficher une représentation 3D d’un Rubik’s cube 3×3×3.
-- Architecture modulaire : rendu et utilitaires dans `render3D` (matrices de transformation, formes, caméra, utilitaires de dessin) ; logique du rubik daëns `rubikCube.py`.
+- Architecture modulaire : rendu et utilitaires dans `render3D` (matrices de transformation, formes, caméra, utilitaires de dessin) ; logique du rubik dans `rubikCube.py`.
 - Chaque petit cube (« cubie ») est un objet graphique (classe Cube) avec : position 3D (vecteur), matrice d’orientation 3×3 (`rotation_matrix`), coordonnées discrètes de grille (`grid` ∈ {−1,0,1}^3) et faces colorées (les faces intérieures sont mises en noir).
 - L’objet `Rubik` gère la collection des cubies, l’espacement (`gap`), la vitesse d’animation (`turn_speed`), l’état d’une rotation en cours (`moveState`) et un buffer d’entrées (`input_buffer`).
 
@@ -24,6 +24,11 @@
 		- `position_monde = R_global(angle) @ position_monde` (rotation autour de l’origine),
 		- `rotation_matrix = R_global(angle) @ rotation_matrix` (composition de l’orientation locale).
 - Les rotations sont faites autour du centre du cube (l’origine), ce qui est cohérent puisque les positions des cubies sont définies relativement à ce centre.
+
+## 5 — Buffer d’entrées et enchaînement des mouvements
+
+- Si une rotation est déjà en cours, toute commande supplémentaire est ajoutée à `input_buffer` (FIFO).
+- Après chaque rotation terminée, l’élément suivant du buffer est extrait et la rotation suivante démarre automatiquement. Cela permet de taper plusieurs mouvements rapidement et d’implémenter un scramble qui enfile une longue séquence de mouvements.
 
 ## 6 — Translations et coordonnées homogènes
 
