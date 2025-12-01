@@ -47,7 +47,7 @@
 	Ce qui revient à : translation de −A, rotation autour de l’origine, puis translation de +A.
 
 - *Réponse à la question 4 — expression via translations* : la rotation de centre A et d’angle θ s’écrit exactement comme ci‑dessus. Pour des animations centrées sur une face du cube, on peut translater temporairement les positions concernées, appliquer la rotation puis translater de retour, ou utiliser des matrices homogènes 4×4 pour combiner ces étapes.
-
+ 
 
 ## 9 — Fonctionnalités offertes
 

@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug 27 13:53:56 2025
-
-ce code crée un triangle et le fait tourner autour de l'origine
-la séquence d'images est ensuite exportée dans une animation
-
-@author: fehren
-"""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,8 +10,10 @@ ytriangle = np.array([1, 1, 1.5, 1.5])
 
 # Fonction pour effectuer une rotation autour d'un centre donné
 def Rotation(t, x, y, xc, yc):
-    M = np.array([[cos(t), -sin(t)], [sin(t), cos(t)]])
-    v = np.array([x - xc, y - yc])
+    M = np.array([[cos(t), -sin(t)],
+                  [sin(t), cos(t)]])
+    v = np.array([x - xc,
+                  y - yc])
     v_rotated = M.dot(v)
     return v_rotated[0] + xc, v_rotated[1] + yc
 

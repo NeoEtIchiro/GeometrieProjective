@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug 27 13:53:56 2025
-
-ce code crée un triangle et le fait tourner autour de l'origine
-la séquence d'images est ensuite exportée dans une animation
-
-@author: fehren
-"""
-
 import math
 
 def Rotation(A, theta, x, y):
