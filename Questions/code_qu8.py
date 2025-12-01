@@ -32,9 +32,6 @@ def Rotation2(A, theta, x, y):
         Y = yi
         W = 1
         # Matrice de rotation homogène autour de A
-        # [ cosθ  -sinθ  xA - xA*cosθ + yA*sinθ ]
-        # [ sinθ   cosθ  yA - xA*sinθ - yA*cosθ ]
-        # [  0      0              1            ]
         X_rot = cos_t*X - sin_t*Y + xA - xA*cos_t + yA*sin_t
         Y_rot = sin_t*X + cos_t*Y + yA - xA*sin_t - yA*cos_t
         x_new.append(X_rot)

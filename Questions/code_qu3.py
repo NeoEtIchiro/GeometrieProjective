@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 from math import pi, cos, sin
@@ -14,7 +13,7 @@ def Rotation(t, x, y, xc, yc):
                   [sin(t), cos(t)]])
     v = np.array([x - xc,
                   y - yc])
-    v_rotated = M.dot(v)
+    v_rotated = M.dot(v) #appliquer la rotation a v
     return v_rotated[0] + xc, v_rotated[1] + yc
 
 # Fonction pour effectuer une homothétie de centre donné
