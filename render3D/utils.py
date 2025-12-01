@@ -42,3 +42,44 @@ def draw_scene(surface, objects, camera_pos, camera_angles, d=10):
     for _, face, pts3d_cam, obj, M, position in faces_to_draw:
         # On ne redonne pas pts3d_cam à face.draw, car elle refait le calcul
         face.draw(surface, R_view, camera_pos, d, M, position)
+
+def parse_move_string(s):
+    """Retourne une liste de 1 ou 2 tuples (axis, layer, dir) selon la chaîne s."""
+    s = s.strip()
+    if not s:
+        return []
+    # mapping face -> (axis, layer, base_dir)
+    # base_dir = +1 correspond à un quart de tour "horaire" vu de l'extérieur
+    face_map = {
+        'U': ('y', 1, +1),
+        'D': ('y', -1, +1),
+        'R': ('x', 1, +1),
+        'L': ('x', -1, +1),
+        'F': ('z', 1, +1),
+        'B': ('z', -1, +1),
+    }
+    face = s[0].upper()
+    if face not in face_map:
+        raise ValueError(f"Unknown face '{face}' in move '{s}'")
+    axis, layer, base = face_map[face]
+
+    # detector suffix
+    suffix = s[1:] if len(s) > 1 else ''
+    moves = []
+    if suffix == "2":
+        # double = deux quarts de tour dans le même sens
+        moves.append((axis, layer, base))
+        moves.append((axis, layer, base))
+    else:
+        # prime (') inverse le sens
+        if suffix == "'":
+            moves.append((axis, layer, -base))
+        else:
+            moves.append((axis, layer, base))
+    return moves
+
+def parse_moves_list(strings):
+    out = []
+    for s in strings:
+        out.extend(parse_move_string(s))
+    return out

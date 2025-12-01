@@ -1,0 +1,34 @@
+{
+  "rubik": {
+    "sequences": [
+      {
+        "name": "Scramble",
+        "speed": 8,
+        "moves": ["R", "U", "R'", "U'", "F2", "L", "D'", "B2"]
+      },
+      {
+        "name": "Solve",
+        "speed": 2,
+        "moves": ["R'", "U'", "R'", "U'", "F2", "L'", "D'", "B2"]
+      }
+    ]
+  },
+  "camera": {
+    "sequences": [
+      {
+        "name": "ScrambleCam",
+        "duration": 3,
+        "zoom": 25,
+        "vertical": 7,
+        "delay": 0
+      },
+      {
+        "name": "SolveCam",
+        "duration": 5,
+        "zoom": 15,
+        "vertical": 0,
+        "delay": 3
+      }
+    ]
+  }
+}
